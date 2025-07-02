@@ -8,6 +8,22 @@ Code generation using large language models (such as GPT-4 and LLaMA) holds imme
 
 The primary innovation, "TestTypeKit," provides a structured set of prompt templates categorized by unit-test types (e.g., boundary, exception, nominal, property-based), enabling clear, repeatable experiments to quantify how specific test types influence LLM-generated code.
 
+## Workflow
+
+The overall workflow consists of the following clear steps:
+
+1. **Benchmark Preparation**: Tasks from established benchmarks (MBPP, HumanEval, real-world code snippets) are structured into standardized JSON format.
+2. **Test Generation**:
+
+   * **Type-Guided Generation**: Using TestTypeKit templates to systematically produce structured, type-specific unit tests.
+   * **Zero-Shot Generation**: Generating unit tests from function signatures and descriptions without predefined categories.
+3. **Code Generation**: Using the generated tests embedded within LLM prompts to guide code synthesis.
+4. **Evaluation and Analysis**:
+
+   * Execute the generated code against tests.
+   * Measure detailed metrics including correctness, code coverage, mutation scores, error types, stability, and efficiency.
+   * Analyze results using statistical methods to determine the impact of different test-generation approaches.
+
 ## Goals
 
 * Develop structured, reusable prompt templates for automated, type-specific test generation.
@@ -47,7 +63,7 @@ The project evaluates the following unit-test categories:
 * Property-Based Tests
 * State-Transition Tests (where applicable)
 
-We run systematic experiments with:
+Systematic experiments are run using:
 
 * Multiple benchmark tasks (MBPP, HumanEval, and custom-curated real-world scenarios).
 * Automated generation of unit tests using the "TestTypeKit" prompt templates.
