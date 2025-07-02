@@ -12,7 +12,7 @@ The primary innovation, "TestTypeKit," provides a structured set of prompt templ
 
 The overall workflow clearly integrates LangChain for managing LLM interactions and GPT APIs provided by Professor Paolo:
 
-1. **Benchmark Preparation**: Tasks from established benchmarks (MBPP, HumanEval, real-world code snippets) are structured into standardized JSON format.
+1. **Benchmark Construction**: Instead of relying on existing benchmarks like MBPP or HumanEval, we define our own suite of tasks inspired by realistic code snippets. Each task includes a function signature, natural language description, optional reference solution, and test cases.
 
 2. **Test Generation using GPT APIs and LangChain**:
 
@@ -26,7 +26,7 @@ The overall workflow clearly integrates LangChain for managing LLM interactions 
 
 4. **Evaluation and Analysis**:
 
-   * Execute the generated code against tests (including generated and reference tests from benchmarks).
+   * Execute the generated code against tests (both generated and embedded in task definitions).
    * Collect detailed metrics: correctness, code coverage, mutation scores, error types, stability, and efficiency.
    * Analyze results using statistical methods to identify the impact of different test-generation approaches.
 
@@ -34,16 +34,16 @@ The overall workflow clearly integrates LangChain for managing LLM interactions 
 
 * Develop structured, reusable prompt templates for automated, type-specific test generation.
 * Evaluate the impact of different unit-test types on the quality and correctness of LLM-generated code.
-* Benchmark LLM performance systematically using standard code-generation tasks (MBPP, HumanEval) and real-world code scenarios.
+* Build and maintain a custom benchmark of real-world inspired function tasks for flexible, type-oriented testing.
 
 ## Benchmark Design
 
-Inspired by existing robust benchmark frameworks, each task is defined with the following structured JSON schema:
+Inspired by frameworks such as Robust-Attack-Detectors-LLM, each task is defined with the following structured JSON schema:
 
 ```json
 {
   "task_id": "unique_task_identifier",
-  "source": "benchmark_name",
+  "source": "custom",
   "function_signature": "def function_name(args):",
   "description": "Natural language description of the function.",
   "reference_solution": "Optional reference implementation.",
@@ -71,30 +71,16 @@ The project evaluates the following unit-test categories:
 
 Systematic experiments are run using:
 
-* Multiple benchmark tasks (MBPP, HumanEval, and custom-curated real-world scenarios).
+* Dozens of self-defined tasks stored in the benchmark folder.
 * Automated generation of unit tests using the "TestTypeKit" prompt templates.
 * Evaluation metrics including pass rate, statement coverage, mutation score, error-type distribution, stability, and efficiency.
-
-## Integration with LangChain
-
-The project leverages LangChain, an advanced framework designed to simplify the interaction with large language models. LangChain provides:
-
-* Efficient prompt management and execution.
-* Robust mechanisms for chaining model interactions.
-* Simplified integration with various LLM APIs.
-
-## GPT API Access
-
-Professor Paolo has kindly provided access to GPT APIs for conducting experiments within this project. This access enables us to perform extensive, controlled experiments with GPT models, ensuring reproducibility and scalability.
 
 ## Repository Structure
 
 ```
 llm-tdd-testtypekit/
 ├── benchmarks/
-│   ├── mbpp/
-│   ├── humaneval/
-│   └── realworld/
+│   └── custom/
 ├── prompts/
 │   └── testtypekit_templates.py
 ├── test_generators/
@@ -113,19 +99,8 @@ llm-tdd-testtypekit/
 
 Detailed instructions will be provided in the `evaluation` scripts. Basic workflow:
 
-1. Select or add benchmark tasks to `benchmarks/`.
-2. Use scripts in `test_generators/` to produce unit tests.
-3. Generate code using tests embedded in prompt templates managed by LangChain.
-4. Run the generated code and measure performance with evaluation scripts.
+1. Add benchmark tasks to `benchmarks/custom/` using the defined JSON structure.
+2. Use scripts in `test_generators/` to produce unit tests with GPT APIs via LangChain.
+3. Generate code using the tests embedded in prompts.
+4. Run the generated code and evaluate performance using the evaluation scripts.
 5. Analyze outcomes using provided notebooks.
-
-## Contributing
-
-Contributions are highly encouraged! Feel free to:
-
-* Submit pull requests with improvements or new benchmarks.
-* Open issues to discuss new features, tests, or improvements.
-
-## License
-
-This project is licensed under the MIT License.
