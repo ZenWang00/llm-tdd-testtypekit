@@ -10,19 +10,25 @@ The primary innovation, "TestTypeKit," provides a structured set of prompt templ
 
 ## Workflow
 
-The overall workflow consists of the following clear steps:
+The overall workflow clearly integrates LangChain for managing LLM interactions and GPT APIs provided by Professor Paolo:
 
 1. **Benchmark Preparation**: Tasks from established benchmarks (MBPP, HumanEval, real-world code snippets) are structured into standardized JSON format.
-2. **Test Generation**:
 
-   * **Type-Guided Generation**: Using TestTypeKit templates to systematically produce structured, type-specific unit tests.
-   * **Zero-Shot Generation**: Generating unit tests from function signatures and descriptions without predefined categories.
-3. **Code Generation**: Using the generated tests embedded within LLM prompts to guide code synthesis.
+2. **Test Generation using GPT APIs and LangChain**:
+
+   * **Type-Guided Generation**: LangChain is used to manage structured interactions with GPT models, systematically producing structured, type-specific unit tests from defined TestTypeKit templates.
+   * **Zero-Shot Generation**: Leveraging GPT APIs via LangChain to automatically generate diverse unit tests directly from function signatures and descriptions without predefined test categories.
+
+3. **Code Generation via LangChain and GPT**:
+
+   * Generated unit tests are embedded in LangChain-managed prompts.
+   * GPT models then synthesize code guided by these structured prompts and generated tests.
+
 4. **Evaluation and Analysis**:
 
-   * Execute the generated code against tests.
-   * Measure detailed metrics including correctness, code coverage, mutation scores, error types, stability, and efficiency.
-   * Analyze results using statistical methods to determine the impact of different test-generation approaches.
+   * Execute the generated code against tests (including generated and reference tests from benchmarks).
+   * Collect detailed metrics: correctness, code coverage, mutation scores, error types, stability, and efficiency.
+   * Analyze results using statistical methods to identify the impact of different test-generation approaches.
 
 ## Goals
 
@@ -109,7 +115,7 @@ Detailed instructions will be provided in the `evaluation` scripts. Basic workfl
 
 1. Select or add benchmark tasks to `benchmarks/`.
 2. Use scripts in `test_generators/` to produce unit tests.
-3. Generate code using tests embedded in prompt templates.
+3. Generate code using tests embedded in prompt templates managed by LangChain.
 4. Run the generated code and measure performance with evaluation scripts.
 5. Analyze outcomes using provided notebooks.
 
