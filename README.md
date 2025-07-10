@@ -1,106 +1,36 @@
-# LLM-TDD TestTypeKit
+# LLM-TDD: Test-Driven Code Generation with LangChain
 
-This repository explores the integration of Test-Driven Development (TDD) practices with Large Language Models (LLMs) to systematically improve code generation quality, correctness, and robustness. We introduce the "TestTypeKit," a structured framework for automated, type-specific unit-test generation that guides LLMs towards generating high-quality code.
+This repository explores the integration of Test-Driven Development (TDD) with Large Language Models (LLMs), aiming to systematically improve code generation quality and robustness. The project begins by reproducing HumanEval results using LangChain pipelines and gradually extends into TDD-style prompt strategies, structured test generation, and benchmark design.
 
 ## Overview
 
-Code generation using large language models (such as GPT-4 and LLaMA) holds immense promise, but ensuring generated code correctness and robustness remains challenging. This project applies TDD methodologies, where tests are generated first to guide the model's code generation, rather than merely validating code after generation.
+Large Language Models such as GPT-4 and LLaMA are capable of generating functional code from natural language descriptions. However, ensuring correctness, robustness, and coverage remains a major challenge. This project follows a **test-driven philosophy**, exploring how structured testing—either as input or as evaluation—can guide LLMs towards more reliable code.
 
-The primary innovation, "TestTypeKit," provides a structured set of prompt templates categorized by unit-test types (e.g., boundary, exception, nominal, property-based), enabling clear, repeatable experiments to quantify how specific test types influence LLM-generated code.
+Our initial goal is to **reproduce HumanEval results using LangChain**, serving as a baseline. Building on this, we will experiment with embedding various types of tests into prompts, including both user-written and LLM-generated tests.
 
-## Workflow
+## Project Phases
 
-The overall workflow clearly integrates LangChain for managing LLM interactions and GPT APIs provided by Professor Paolo:
+### Phase 1: HumanEval Baseline Reproduction
 
-1. **Benchmark Construction**: Instead of relying on existing benchmarks like MBPP or HumanEval, we define our own suite of tasks inspired by realistic code snippets. Each task includes a function signature, natural language description, optional reference solution, and test cases.
+- Use LangChain and GPT APIs to reproduce HumanEval pass@k scores.
+- No test-augmented prompts in this stage; only task descriptions and function signatures are used.
 
-2. **Test Generation using GPT APIs and LangChain**:
+### Phase 2: Prompt-Augmented Code Generation
 
-   * **Type-Guided Generation**: LangChain is used to manage structured interactions with GPT models, systematically producing structured, type-specific unit tests from defined TestTypeKit templates.
-   * **Zero-Shot Generation**: Leveraging GPT APIs via LangChain to automatically generate diverse unit tests directly from function signatures and descriptions without predefined test categories.
+- Include human-written test cases in prompts to guide generation.
+- Analyze improvements due to test guidance (acknowledging possible leakage).
 
-3. **Code Generation via LangChain and GPT**:
+### Phase 3: LLM-Generated Test Injection
 
-   * Generated unit tests are embedded in LangChain-managed prompts.
-   * GPT models then synthesize code guided by these structured prompts and generated tests.
+- Generate test cases from descriptions using GPT.
+- Feed both tests and signatures into the prompt, and compare to previous phases.
 
-4. **Evaluation and Analysis**:
+## Workflow Summary
 
-   * Execute the generated code against tests (both generated and embedded in task definitions).
-   * Collect detailed metrics: correctness, code coverage, mutation scores, error types, stability, and efficiency.
-   * Analyze results using statistical methods to identify the impact of different test-generation approaches.
-
-## Goals
-
-* Develop structured, reusable prompt templates for automated, type-specific test generation.
-* Evaluate the impact of different unit-test types on the quality and correctness of LLM-generated code.
-* Build and maintain a custom benchmark of real-world inspired function tasks for flexible, type-oriented testing.
-
-## Benchmark Design
-
-Inspired by frameworks such as Robust-Attack-Detectors-LLM, each task is defined with the following structured JSON schema:
-
-```json
-{
-  "task_id": "unique_task_identifier",
-  "source": "custom",
-  "function_signature": "def function_name(args):",
-  "description": "Natural language description of the function.",
-  "reference_solution": "Optional reference implementation.",
-  "reference_tests": [
-    {"input": "input_example", "expected_output": "expected_result", "type": "test_category"}
-  ],
-  "generated_tests": [],
-  "metadata": {
-    "language": "python",
-    "tags": ["tag1", "tag2"],
-    "difficulty": "difficulty_level"
-  }
-}
-```
-
-## Experimental Setup
-
-The project evaluates the following unit-test categories:
-
-* Boundary Value Tests
-* Exception Tests
-* Nominal (Happy-Path) Tests
-* Property-Based Tests
-* State-Transition Tests (where applicable)
-
-Systematic experiments are run using:
-
-* Dozens of self-defined tasks stored in the benchmark folder.
-* Automated generation of unit tests using the "TestTypeKit" prompt templates.
-* Evaluation metrics including pass rate, statement coverage, mutation score, error-type distribution, stability, and efficiency.
-
-## Repository Structure
-
-```
-llm-tdd-testtypekit/
-├── benchmarks/
-│   └── custom/
-├── prompts/
-│   └── testtypekit_templates.py
-├── test_generators/
-│   ├── zero_shot_generator.py
-│   └── type_guided_generator.py
-├── evaluation/
-│   ├── execute_tests.py
-│   └── collect_metrics.py
-├── results/
-│   └── experimental_runs/
-└── notebooks/
-    └── analysis.ipynb
-```
-
-## How to Use
-
-Detailed instructions will be provided in the `evaluation` scripts. Basic workflow:
-
-1. Add benchmark tasks to `benchmarks/custom/` using the defined JSON structure.
-2. Use scripts in `test_generators/` to produce unit tests with GPT APIs via LangChain.
-3. Generate code using the tests embedded in prompts.
-4. Run the generated code and evaluate performance using the evaluation scripts.
-5. Analyze outcomes using provided notebooks.
+1. **Benchmark Loading**: Start with HumanEval as the benchmark task suite.
+2. **Prompting via LangChain**: Use function signature (+ optional test cases) as structured prompt.
+3. **Code Generation**: GPT model generates Python code.
+4. **Evaluation**:
+   - Execute generated code against HumanEval test suites.
+   - Measure pass@k, error types, and performance statistics.
+5. **Extension (optional)**: Inject LLM-generated test cases to observe improvement or degradation.
