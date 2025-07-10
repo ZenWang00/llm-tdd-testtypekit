@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  llm-tdd:
+    build: .
+    container_name: llm-tdd
+    volumes:
+      - .:/app
+      - ./outputs:/app/outputs
+    environment:
+      - PYTHONPATH=/app
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-gpt-4o-mini}
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-https://api.openai.com/v1}
+      - TEMPERATURE=${TEMPERATURE:-0.7}
+      - MAX_TOKENS=${MAX_TOKENS:-200}
+      - TIMEOUT=${TIMEOUT:-60}
+      - NUM_SAMPLES_PER_TASK=${NUM_SAMPLES_PER_TASK:-6}
+      - DEBUG=${DEBUG:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - HUMANEVAL_DATA_PATH=${HUMANEVAL_DATA_PATH:-benchmarks/humaneval/data}
+      - OUTPUT_PATH=${OUTPUT_PATH:-outputs}
+    working_dir: /app
+    command: bash
+    stdin_open: true
+    tty: true
+    profiles:
+      - development
+      - testing
+
+  llm-tdd-test:
+    build: .
+    container_name: llm-tdd-test
+    volumes:
+      - .:/app
+      - ./outputs:/app/outputs
+    environment:
+      - PYTHONPATH=/app
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-gpt-4o-mini}
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-https://api.openai.com/v1}
+      - TEMPERATURE=${TEMPERATURE:-0.7}
+      - MAX_TOKENS=${MAX_TOKENS:-200}
+      - TIMEOUT=${TIMEOUT:-60}
+      - NUM_SAMPLES_PER_TASK=${NUM_SAMPLES_PER_TASK:-6}
+      - DEBUG=${DEBUG:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - HUMANEVAL_DATA_PATH=${HUMANEVAL_DATA_PATH:-benchmarks/humaneval/data}
+      - OUTPUT_PATH=${OUTPUT_PATH:-outputs}
+    working_dir: /app
+    command: python -m pytest
+    profiles:
+      - testing 
