@@ -50,7 +50,8 @@ def check_dependencies():
     """Check if all required dependencies are installed."""
     try:
         import openai
-        import langchain
+        import langchain_core
+        import langchain_openai
         import numpy
         import tqdm
         import fire

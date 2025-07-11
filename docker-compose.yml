@@ -20,6 +20,8 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - HUMANEVAL_DATA_PATH=${HUMANEVAL_DATA_PATH:-benchmarks/humaneval/data}
       - OUTPUT_PATH=${OUTPUT_PATH:-outputs}
+      - HTTP_PROXY=http://host.docker.internal:7897
+      - HTTPS_PROXY=http://host.docker.internal:7897
     working_dir: /app
     command: bash
     stdin_open: true
@@ -47,6 +49,8 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - HUMANEVAL_DATA_PATH=${HUMANEVAL_DATA_PATH:-benchmarks/humaneval/data}
       - OUTPUT_PATH=${OUTPUT_PATH:-outputs}
+      - HTTP_PROXY=http://host.docker.internal:7897
+      - HTTPS_PROXY=http://host.docker.internal:7897
     working_dir: /app
     command: python -m pytest
     profiles:

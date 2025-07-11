@@ -1,6 +1,5 @@
 import os
 import openai
-from human_eval.data import write_jsonl, read_problems
 
 def generate_one_completion(prompt, model="gpt-4o-mini"):
     """
@@ -60,55 +59,4 @@ def generate_one_completion(prompt, model="gpt-4o-mini"):
         
     except Exception as e:
         print(f"API调用失败: {e}")
-        return "    pass"
-
-def test_with_example_problem():
-    """
-    使用example_problem.jsonl测试GPT API
-    """
-    # 使用read_problems()读取问题
-    problems = read_problems("data/example_problem.jsonl")
-    problem = problems["test/0"]  # 获取第一个问题
-    
-    print(f"测试问题: {problem['task_id']}")
-    print(f"函数签名: {problem['prompt']}")
-    print(f"标准答案: {problem['canonical_solution']}")
-    print(f"测试用例: {problem['test']}")
-    print("\n" + "="*50 + "\n")
-    
-    # 生成6个样本
-    samples = []
-    for i in range(6):
-        print(f"生成样本 {i+1}/6...")
-        completion = generate_one_completion(problem['prompt'])
-        print(f"生成的代码: {completion}")
-        
-        sample = {
-            "task_id": problem['task_id'],
-            "completion": completion
-        }
-        samples.append(sample)
-        print("-" * 30)
-    
-    # 保存到文件
-    output_file = "data/my_gpt_samples.jsonl"
-    write_jsonl(output_file, samples)
-    print(f"\n样本已保存到: {output_file}")
-    
-    return output_file
-
-if __name__ == "__main__":
-    # 从环境变量获取API密钥
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        print("错误: 未找到OPENAI_API_KEY环境变量")
-        exit(1)
-    
-    openai.api_key = api_key
-    print("已从环境变量加载API密钥")
-    
-    # 运行测试
-    output_file = test_with_example_problem()
-    
-    print(f"\n现在您可以运行评估:")
-    print(f"evaluate_functional_correctness {output_file} --problem_file=data/example_problem.jsonl") 
+        return "    pass" 
