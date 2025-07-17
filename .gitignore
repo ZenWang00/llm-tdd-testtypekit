@@ -52,7 +52,6 @@ htmlcov/
 
 # Output files
 outputs/
-*.jsonl
 *.log
 
 # OS

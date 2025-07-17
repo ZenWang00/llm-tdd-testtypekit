@@ -1,0 +1,2 @@
+{"task_id": "test/0", "completion": "    pass", "method": "langchain"}
+{"task_id": "test/0", "completion": "return 1", "method": "openai_direct"}
