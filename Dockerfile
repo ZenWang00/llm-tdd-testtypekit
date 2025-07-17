@@ -28,8 +28,8 @@ RUN pip install --upgrade pip && \
 # Copy project files
 COPY . .
 
-# Install HumanEval benchmark in development mode
-RUN pip install -e benchmarks/humaneval/
+# 可选：如需 HumanEval，仅在 requirements.txt 里注明或手动安装
+# RUN pip install -e benchmarks/humaneval/
 
 # Create necessary directories
 RUN mkdir -p outputs

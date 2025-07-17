@@ -1,8 +1,6 @@
 import os
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
+from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
 from .prompts.humaneval import HUMANEVAL_PROMPT_TEMPLATE
 
 def generate_one_completion_langchain(prompt, model="gpt-4o-mini"):
@@ -10,21 +8,16 @@ def generate_one_completion_langchain(prompt, model="gpt-4o-mini"):
     使用LangChain生成单个代码补全
     """
     try:
-        llm = ChatOpenAI(
-            model=model,
+        llm = OpenAI(
+            model_name=model,
             temperature=0.7,
             max_tokens=200,
-            timeout=60
+            request_timeout=60
         )
         
-        chain = (
-            {"prompt": RunnablePassthrough()} 
-            | HUMANEVAL_PROMPT_TEMPLATE 
-            | llm 
-            | StrOutputParser()
-        )
-        
-        response = chain.invoke({"prompt": prompt})
+        # 构造 prompt
+        prompt_str = HUMANEVAL_PROMPT_TEMPLATE.format(prompt=prompt)
+        response = llm(prompt_str)
         completion = response.strip()
         
         if "```python" in completion:

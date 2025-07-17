@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "security_functions_llms"
+version = "0.1.0"
+description = ""
+authors = ["anonymous"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+langchain = "^0.1.0"
+openai = "^1.3.8"
+tqdm = "^4.66.1"
+fire = "^0.5.0"
+numpy = "^1.21.0"
+pytest = "^7.0.0"
+pytest-cov = "^4.0.0"
+python-dotenv = "^1.0.0"
+requests = "^2.31.0"
+dvc = "^3.30.3"
+dvc-gdrive = "^2.20.0"
+pandas = "^2.1.3"
+langchain-openai = "^0.0.8"
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.27.1"
+
+[[tool.poetry.source]]
+name = "tuna"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+priority = "default"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
