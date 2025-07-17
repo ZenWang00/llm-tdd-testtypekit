@@ -8,7 +8,7 @@ import sys
 import datetime
 sys.path.append('.')
 
-from pipelines.langchain.generator import generate_one_completion_langchain
+from pipelines.lc_chain.generator import generate_one_completion_langchain
 from human_eval.data import write_jsonl, read_problems
 
 def generate_output_filename(model="gpt-4o-mini", prefix="langchain_results"):
