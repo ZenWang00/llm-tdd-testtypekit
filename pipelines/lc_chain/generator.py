@@ -3,7 +3,7 @@ from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
 from .prompts.humaneval import HUMANEVAL_PROMPT_TEMPLATE
 
-def generate_one_completion_langchain(prompt, model="gpt-4o-mini"):
+def generate_one_completion_langchain(prompt, model="gpt-4o-mini", prompt_template=None):
     """
     使用LangChain生成单个代码补全
     """
@@ -15,8 +15,23 @@ def generate_one_completion_langchain(prompt, model="gpt-4o-mini"):
             request_timeout=60
         )
         
+        # 使用传入的prompt_template，如果没有则使用默认的HUMANEVAL模板
+        if prompt_template is None:
+            prompt_template = HUMANEVAL_PROMPT_TEMPLATE
+        
         # 构造 prompt
-        prompt_str = HUMANEVAL_PROMPT_TEMPLATE.format(prompt=prompt)
+        if hasattr(prompt_template, 'input_variables'):
+            # 根据模板的input_variables决定如何格式化
+            if 'prompt' in prompt_template.input_variables:
+                prompt_str = prompt_template.format(prompt=prompt)
+            elif 'description' in prompt_template.input_variables:
+                prompt_str = prompt_template.format(description=prompt)
+            else:
+                # 默认使用prompt参数
+                prompt_str = prompt_template.format(prompt=prompt)
+        else:
+            prompt_str = prompt_template.format(prompt=prompt)
+            
         response = llm(prompt_str)
         completion = response.strip()
         
@@ -36,67 +51,69 @@ def generate_one_completion_langchain(prompt, model="gpt-4o-mini"):
             else:
                 completion = completion[start:].strip()
         
-        # 如果包含函数签名，去掉函数签名
+        # 如果包含函数签名，去掉函数签名（仅对HumanEval，MBPP需要保留def行）
+        if prompt_template == HUMANEVAL_PROMPT_TEMPLATE:
         lines = completion.split('\n')
         for i, line in enumerate(lines):
             if line.strip().startswith('def '):
                 # 找到函数签名，返回后面的函数体
                 if i + 1 < len(lines):
-                    completion = '\n'.join(lines[i+1:]).strip()
-                break
+                        completion = '\n'.join(lines[i+1:]).strip()
+                    break
         
-        # 强制给所有行添加缩进
-        lines = completion.strip().split('\n')
-        if lines:
-            # 移除所有行的前导空格，然后重新添加缩进
-            cleaned_lines = []
-            indent_level = 0  # 缩进级别：0=4空格，1=8空格，2=12空格，3=16空格
-            
-            for i, line in enumerate(lines):
-                stripped_line = line.strip()
-                if stripped_line:  # 跳过空行
-                    if i == 0:
-                        # 第一行：4个空格
-                        cleaned_lines.append('    ' + stripped_line)
-                        if stripped_line.endswith(':'):
-                            indent_level += 1
-                    else:
-                        if stripped_line.startswith(('return ', 'break', 'continue', 'pass')):
-                            # 简单语句：根据缩进级别
-                            indent = '    ' * (indent_level + 1)
-                            cleaned_lines.append(indent + stripped_line)
-                            # 如果是return语句，可能需要减少缩进级别
-                            if indent_level > 0 and stripped_line.startswith('return '):
-                                indent_level -= 1
-                        elif stripped_line.startswith(('for ', 'if ', 'while ', 'try:', 'except:')):
-                            # 控制流语句：根据缩进级别
-                            indent = '    ' * (indent_level + 1)
-                            cleaned_lines.append(indent + stripped_line)
-                            if stripped_line.endswith(':'):
-                                indent_level += 1
-                        elif stripped_line.startswith(('else:', 'elif ')):
-                            # else/elif语句：与对应的if对齐（相同缩进级别）
-                            indent = '    ' * (indent_level + 1)
-                            cleaned_lines.append(indent + stripped_line)
+        # 强制给所有行添加缩进（仅对HumanEval，MBPP保持原样）
+        if prompt_template == HUMANEVAL_PROMPT_TEMPLATE:
+            lines = completion.strip().split('\n')
+            if lines:
+                # 移除所有行的前导空格，然后重新添加缩进
+                cleaned_lines = []
+                indent_level = 0  # 缩进级别：0=4空格，1=8空格，2=12空格，3=16空格
+                
+                for i, line in enumerate(lines):
+                    stripped_line = line.strip()
+                    if stripped_line:  # 跳过空行
+                        if i == 0:
+                            # 第一行：4个空格
+                            cleaned_lines.append('    ' + stripped_line)
                             if stripped_line.endswith(':'):
                                 indent_level += 1
                         else:
-                            # 其他语句：根据缩进级别
-                            indent = '    ' * (indent_level + 1)
-                            cleaned_lines.append(indent + stripped_line)
-            
-            processed_code = '\n'.join(cleaned_lines)
-            
-            # 添加语法检查和修复
-            processed_code = _fix_syntax_issues(processed_code)
-            
-            return processed_code
+                            if stripped_line.startswith(('return ', 'break', 'continue', 'pass')):
+                                # 简单语句：根据缩进级别
+                                indent = '    ' * (indent_level + 1)
+                                cleaned_lines.append(indent + stripped_line)
+                                # 如果是return语句，可能需要减少缩进级别
+                                if indent_level > 0 and stripped_line.startswith('return '):
+                                    indent_level -= 1
+                            elif stripped_line.startswith(('for ', 'if ', 'while ', 'try:', 'except:')):
+                                # 控制流语句：根据缩进级别
+                                indent = '    ' * (indent_level + 1)
+                                cleaned_lines.append(indent + stripped_line)
+                                if stripped_line.endswith(':'):
+                                    indent_level += 1
+                            elif stripped_line.startswith(('else:', 'elif ')):
+                                # else/elif语句：与对应的if对齐（相同缩进级别）
+                                indent = '    ' * (indent_level + 1)
+                                cleaned_lines.append(indent + stripped_line)
+                                if stripped_line.endswith(':'):
+                                    indent_level += 1
+                            else:
+                                # 其他语句：根据缩进级别
+                                indent = '    ' * (indent_level + 1)
+                                cleaned_lines.append(indent + stripped_line)
+                
+                processed_code = '\n'.join(cleaned_lines)
+                
+                # 添加语法检查和修复
+                processed_code = _fix_syntax_issues(processed_code)
+                
+                return processed_code
         
         return completion.strip()
-    
+        
     except Exception as e:
         print(f"LangChain API调用失败: {e}")
-        return "    pass"
+        return "    pass" 
 
 def _fix_syntax_issues(code):
         """修复常见的语法问题 - 递归处理控制流缩进"""
