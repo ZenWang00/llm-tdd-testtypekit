@@ -14,12 +14,24 @@ CRITICAL FORMATTING REQUIREMENTS:
 - Do not include the function signature (def line)
 - Do not include any comments, explanations, or code block markers
 - Do not include empty lines
+- All nested statements must strictly follow Python indentation rules:
+  - Each new block must be indented exactly 4 spaces deeper than its parent.
+  - Sibling blocks (such as elif/else/except/finally) must align with their corresponding parent block.
+  - Do not over-indent or under-indent any line.
+  - Every control flow statement must be followed by a properly indented code block (never leave a block empty; use 'pass' if needed).
 
-Example of correct format:
-    if condition:
-        result = some_calculation()
-        return result
-    return default_value
+INDENTATION RULES FOR NESTED LOGIC:
+- Base level: 4 spaces (all lines start here)
+- Inside if/for/while/try blocks: 8 spaces (4 + 4)
+- Inside nested if/for/while/try blocks: 12 spaces (4 + 4 + 4)
+- elif/else/except/finally must align with their corresponding if/for/while/try
+- Every control structure (if/for/while/try) must have at least one indented line after it
+
+CRITICAL ELSE/ELIF RULES:
+- else: and elif: must ALWAYS have a corresponding if: statement above them
+- else: and elif: must be at the SAME indentation level as their corresponding if:
+- NEVER place else: or elif: without a matching if: statement
+- Each if: block must be complete before starting elif: or else:
 
 Your response:
 """
