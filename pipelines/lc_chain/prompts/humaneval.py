@@ -14,24 +14,20 @@ CRITICAL FORMATTING REQUIREMENTS:
 - Do not include the function signature (def line)
 - Do not include any comments, explanations, or code block markers
 - Do not include empty lines
-- All nested statements must strictly follow Python indentation rules:
-  - Each new block must be indented exactly 4 spaces deeper than its parent.
-  - Sibling blocks (such as elif/else/except/finally) must align with their corresponding parent block.
-  - Do not over-indent or under-indent any line.
-  - Every control flow statement must be followed by a properly indented code block (never leave a block empty; use 'pass' if needed).
 
-INDENTATION RULES FOR NESTED LOGIC:
-- Base level: 4 spaces (all lines start here)
-- Inside if/for/while/try blocks: 8 spaces (4 + 4)
-- Inside nested if/for/while/try blocks: 12 spaces (4 + 4 + 4)
-- elif/else/except/finally must align with their corresponding if/for/while/try
-- Every control structure (if/for/while/try) must have at least one indented line after it
+CRITICAL CONDITIONAL LOGIC RULES:
+- NEVER place a return statement immediately after an if statement without proper indentation
+- Each if/elif/else block should have EXACTLY ONE return statement
+- If you need multiple return statements, use separate if/elif/else blocks
+- WRONG: if condition: return True; return False
+- CORRECT: if condition: return True; else: return False
+- For loops with conditions: use if/else inside the loop, or return after the loop
+- NEVER place an unconditional return inside a loop unless you want to exit immediately
 
-CRITICAL ELSE/ELIF RULES:
-- else: and elif: must ALWAYS have a corresponding if: statement above them
-- else: and elif: must be at the SAME indentation level as their corresponding if:
-- NEVER place else: or elif: without a matching if: statement
-- Each if: block must be complete before starting elif: or else:
+CRITICAL LOOP LOGIC RULES:
+- NEVER place an unconditional return statement inside a loop unless you want to exit immediately
+- For loops that process all items, place the return statement AFTER the loop completes
+- Common pattern: collect results in a list/accumulator, then return after the loop
 
 Your response:
 """
