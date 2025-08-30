@@ -2,6 +2,8 @@ import os
 from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
 from .prompts.humaneval import HUMANEVAL_PROMPT_TEMPLATE
+from .prompts.mbpp_test_generation import MBPP_TEST_GENERATION_TEMPLATE
+from .prompts.mbpp_tdd_implementation import MBPP_TDD_IMPLEMENTATION_TEMPLATE
 
 def generate_one_completion_langchain(prompt, model="gpt-4o-mini", prompt_template=None, **kwargs):
     """
@@ -31,6 +33,19 @@ def generate_one_completion_langchain(prompt, model="gpt-4o-mini", prompt_templa
                 # MBPP模板需要description和test_list
                 test_list = kwargs.get('test_list', '')
                 prompt_str = prompt_template.format(description=prompt, test_list=test_list)
+            elif 'description' in prompt_template.input_variables and 'generated_tests' in prompt_template.input_variables and 'reference_code' in prompt_template.input_variables:
+                # TDD实现模板需要description、generated_tests和reference_code
+                generated_tests = kwargs.get('generated_tests', '')
+                reference_code = kwargs.get('reference_code', '')
+                prompt_str = prompt_template.format(description=prompt, generated_tests=generated_tests, reference_code=reference_code)
+            elif 'description' in prompt_template.input_variables and 'reference_code' in prompt_template.input_variables:
+                # TDD测试生成模板需要description和reference_code
+                reference_code = kwargs.get('reference_code', '')
+                prompt_str = prompt_template.format(description=prompt, reference_code=reference_code)
+            elif 'description' in prompt_template.input_variables and 'generated_tests' in prompt_template.input_variables:
+                # TDD实现模板需要description和generated_tests
+                generated_tests = kwargs.get('generated_tests', '')
+                prompt_str = prompt_template.format(description=prompt, generated_tests=generated_tests)
             elif 'description' in prompt_template.input_variables:
                 prompt_str = prompt_template.format(description=prompt)
             else:
@@ -85,7 +100,26 @@ def generate_one_completion_langchain(prompt, model="gpt-4o-mini", prompt_templa
         
     except Exception as e:
         print(f"LangChain API调用失败: {e}")
-        return "    pass" 
+        return "    pass"
+
+def generate_tests_for_mbpp(description, reference_code, model="gpt-4o-mini"):
+    """阶段1：为MBPP问题生成测试用例"""
+    return generate_one_completion_langchain(
+        description, 
+        model, 
+        MBPP_TEST_GENERATION_TEMPLATE,
+        reference_code=reference_code
+    )
+
+def generate_implementation_with_tests(description, generated_tests, reference_code, model="gpt-4o-mini"):
+    """阶段2：根据生成的测试生成实现"""
+    return generate_one_completion_langchain(
+        description, 
+        model, 
+        MBPP_TDD_IMPLEMENTATION_TEMPLATE,
+        generated_tests=generated_tests,
+        reference_code=reference_code
+    ) 
 
 def _fix_syntax_issues(code):
         """修复常见的语法问题 - 递归处理控制流缩进"""
