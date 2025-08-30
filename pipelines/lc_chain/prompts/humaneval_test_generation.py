@@ -1,24 +1,24 @@
 from langchain_core.prompts import PromptTemplate
 
-MBPP_TEST_GENERATION_TEMPLATE = PromptTemplate(
-    input_variables=["description", "reference_code"],
-    template="""You are a test-driven development expert. Generate comprehensive unit tests for the following problem.
+HUMANEVAL_TEST_GENERATION_TEMPLATE = PromptTemplate(
+    input_variables=["prompt", "canonical_solution"],
+    template="""You are a test-driven development expert. Generate comprehensive unit tests for the following function.
 
-Problem Description:
-{description}
+Function Signature:
+{prompt}
 
-Reference Implementation:
-{reference_code}
+Reference Solution:
+{canonical_solution}
 
 Generate Python unit tests that:
-1. Use the SAME function name as in the reference code
-2. Cover the main functionality described in the problem
+1. Use the EXACT function name from the function signature above
+2. Cover the main functionality described in the function
 3. Include edge cases and boundary conditions
 4. Are executable and well-structured
 5. Use pytest format with clear assertions
 
 IMPORTANT REQUIREMENTS:
-- The function name in your tests MUST match the function name in the reference code
+- The function name in your tests MUST match the function name in the function signature exactly
 - Write tests that would help guide the implementation
 - Include both positive and negative test cases
 - Test edge cases like empty inputs, invalid inputs, etc.

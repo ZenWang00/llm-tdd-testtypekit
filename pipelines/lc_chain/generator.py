@@ -4,6 +4,8 @@ from langchain.prompts import PromptTemplate
 from .prompts.humaneval import HUMANEVAL_PROMPT_TEMPLATE
 from .prompts.mbpp_test_generation import MBPP_TEST_GENERATION_TEMPLATE
 from .prompts.mbpp_tdd_implementation import MBPP_TDD_IMPLEMENTATION_TEMPLATE
+from .prompts.humaneval_test_generation import HUMANEVAL_TEST_GENERATION_TEMPLATE
+from .prompts.humaneval_tdd_implementation import HUMANEVAL_TDD_IMPLEMENTATION_TEMPLATE
 
 def generate_one_completion_langchain(prompt, model="gpt-4o-mini", prompt_template=None, **kwargs):
     """
@@ -27,7 +29,15 @@ def generate_one_completion_langchain(prompt, model="gpt-4o-mini", prompt_templa
             prompt_str = prompt_template
         elif hasattr(prompt_template, 'input_variables'):
             # 根据模板的input_variables决定如何格式化
-            if 'prompt' in prompt_template.input_variables:
+            if 'prompt' in prompt_template.input_variables and 'canonical_solution' in prompt_template.input_variables:
+                # HumanEval测试生成模板需要prompt和canonical_solution
+                canonical_solution = kwargs.get('canonical_solution', '')
+                prompt_str = prompt_template.format(prompt=prompt, canonical_solution=canonical_solution)
+            elif 'prompt' in prompt_template.input_variables and 'generated_tests' in prompt_template.input_variables:
+                # HumanEval TDD实现模板需要prompt和generated_tests
+                generated_tests = kwargs.get('generated_tests', '')
+                prompt_str = prompt_template.format(prompt=prompt, generated_tests=generated_tests)
+            elif 'prompt' in prompt_template.input_variables:
                 prompt_str = prompt_template.format(prompt=prompt)
             elif 'description' in prompt_template.input_variables and 'test_list' in prompt_template.input_variables:
                 # MBPP模板需要description和test_list
@@ -119,6 +129,24 @@ def generate_implementation_with_tests(description, generated_tests, reference_c
         MBPP_TDD_IMPLEMENTATION_TEMPLATE,
         generated_tests=generated_tests,
         reference_code=reference_code
+    )
+
+def generate_tests_for_humaneval(prompt, canonical_solution, model="gpt-4o-mini"):
+    """阶段1：为HumanEval生成测试用例"""
+    return generate_one_completion_langchain(
+        prompt, 
+        model, 
+        HUMANEVAL_TEST_GENERATION_TEMPLATE,
+        canonical_solution=canonical_solution
+    )
+
+def generate_implementation_with_tests_humaneval(prompt, generated_tests, model="gpt-4o-mini"):
+    """阶段2：根据测试生成HumanEval实现"""
+    return generate_one_completion_langchain(
+        prompt, 
+        model, 
+        HUMANEVAL_TDD_IMPLEMENTATION_TEMPLATE,
+        generated_tests=generated_tests
     ) 
 
 def _fix_syntax_issues(code):
