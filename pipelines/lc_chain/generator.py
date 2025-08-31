@@ -7,15 +7,23 @@ from .prompts.mbpp_tdd_implementation import MBPP_TDD_IMPLEMENTATION_TEMPLATE
 from .prompts.humaneval_test_generation import HUMANEVAL_TEST_GENERATION_TEMPLATE
 from .prompts.humaneval_tdd_implementation import HUMANEVAL_TDD_IMPLEMENTATION_TEMPLATE
 
-def generate_one_completion_langchain(prompt, model="gpt-4o-mini", prompt_template=None, **kwargs):
+def generate_one_completion_langchain(prompt, model="gpt-4o-mini", prompt_template=None, temperature=0.0, max_tokens=600, **kwargs):
     """
     使用LangChain生成单个代码补全
+    
+    Args:
+        prompt: 输入提示
+        model: 模型名称
+        prompt_template: 提示模板
+        temperature: 温度参数，控制随机性 (0.0-2.0)
+        max_tokens: 最大token数
+        **kwargs: 其他参数
     """
     try:
         llm = OpenAI(
             model_name=model,
-            temperature=0.0,  # 设置为0.0，最大化确定性
-            max_tokens=600,   # 增加token限制，给LLM更多思考空间
+            temperature=temperature,  # 可配置的温度参数
+            max_tokens=max_tokens,   # 可配置的token限制
             request_timeout=60
         )
         
@@ -112,40 +120,48 @@ def generate_one_completion_langchain(prompt, model="gpt-4o-mini", prompt_templa
         print(f"LangChain API调用失败: {e}")
         return "    pass"
 
-def generate_tests_for_mbpp(description, reference_code, model="gpt-4o-mini"):
+def generate_tests_for_mbpp(description, reference_code, model="gpt-4o-mini", temperature=0.0, max_tokens=600):
     """阶段1：为MBPP问题生成测试用例"""
     return generate_one_completion_langchain(
         description, 
         model, 
         MBPP_TEST_GENERATION_TEMPLATE,
+        temperature=temperature,
+        max_tokens=max_tokens,
         reference_code=reference_code
     )
 
-def generate_implementation_with_tests(description, generated_tests, reference_code, model="gpt-4o-mini"):
+def generate_implementation_with_tests(description, generated_tests, reference_code, model="gpt-4o-mini", temperature=0.0, max_tokens=600):
     """阶段2：根据生成的测试生成实现"""
     return generate_one_completion_langchain(
         description, 
         model, 
         MBPP_TDD_IMPLEMENTATION_TEMPLATE,
+        temperature=temperature,
+        max_tokens=max_tokens,
         generated_tests=generated_tests,
         reference_code=reference_code
     )
 
-def generate_tests_for_humaneval(prompt, canonical_solution, model="gpt-4o-mini"):
+def generate_tests_for_humaneval(prompt, canonical_solution, model="gpt-4o-mini", temperature=0.0, max_tokens=600):
     """阶段1：为HumanEval生成测试用例"""
     return generate_one_completion_langchain(
         prompt, 
         model, 
         HUMANEVAL_TEST_GENERATION_TEMPLATE,
+        temperature=temperature,
+        max_tokens=max_tokens,
         canonical_solution=canonical_solution
     )
 
-def generate_implementation_with_tests_humaneval(prompt, generated_tests, model="gpt-4o-mini"):
+def generate_implementation_with_tests_humaneval(prompt, generated_tests, model="gpt-4o-mini", temperature=0.0, max_tokens=600):
     """阶段2：根据测试生成HumanEval实现"""
     return generate_one_completion_langchain(
         prompt, 
         model, 
         HUMANEVAL_TDD_IMPLEMENTATION_TEMPLATE,
+        temperature=temperature,
+        max_tokens=max_tokens,
         generated_tests=generated_tests
     ) 
 

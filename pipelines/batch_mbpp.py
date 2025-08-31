@@ -75,8 +75,8 @@ class MBPPBatchPipeline(BaseBatchPipeline):
             problems = self.read_problems(problem_file)
             print(f"Total MBPP problems available: {len(problems)}")
             
-            # Filter for official test split (1-500)
-            task_ids = [tid for tid in problems if 1 <= int(tid) <= 500]
+            # Use all available tasks (no filtering for official test split)
+            task_ids = list(problems.keys())
             task_ids.sort(key=int)
             
             end_task = min(start_task + num_tasks, len(task_ids))

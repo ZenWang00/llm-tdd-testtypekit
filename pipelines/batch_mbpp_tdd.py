@@ -74,8 +74,8 @@ class TDDMBPPBatchPipeline(BaseBatchPipeline):
             problems = self.read_problems(problem_file)
             print(f"Total MBPP problems available: {len(problems)}")
             
-            # 过滤官方测试集
-            task_ids = [tid for tid in problems if 1 <= int(tid) <= 500]
+            # 使用所有可用任务（不过滤官方测试集）
+            task_ids = list(problems.keys())
             task_ids.sort(key=int)
             
             end_task = min(start_task + num_tasks, len(task_ids))
