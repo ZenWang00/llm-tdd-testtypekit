@@ -105,7 +105,7 @@ def generate_one_completion_langchain(prompt, model="gpt-4o-mini", prompt_templa
                             completion = '\n'.join(lines[i+1:]).strip()
                         break
         elif prompt_template == HUMANEVAL_PROMPT_TEMPLATE:
-            # 直接比较对象的情况
+            # 直接比较对象的情况 - 仅对HumanEval去掉def行
             lines = completion.split('\n')
             for i, line in enumerate(lines):
                 if line.strip().startswith('def '):
@@ -113,6 +113,31 @@ def generate_one_completion_langchain(prompt, model="gpt-4o-mini", prompt_templa
                     if i + 1 < len(lines):
                         completion = '\n'.join(lines[i+1:]).strip()
                     break
+        # 对于MBPP相关的模板，保留完整的函数定义（包括def行）
+        elif (prompt_template == MBPP_TDD_IMPLEMENTATION_TEMPLATE or 
+              prompt_template == MBPP_TEST_GENERATION_TEMPLATE or
+              prompt_template == "MBPP_REPAIR"):
+            # MBPP需要保留完整的函数定义，不做任何截断
+            print(f"DEBUG: MBPP template detected, preserving complete function definition")
+            print(f"DEBUG: Original completion length: {len(completion)}")
+            print(f"DEBUG: First 200 chars: {completion[:200]}")
+            pass
+        # 当prompt_template为None时，通过检查prompt内容来判断
+        elif prompt_template is None:
+            # 检查prompt内容，如果是MBPP修复相关的，保留def行
+            if ("TEST EXECUTION RESULT" in prompt and "Reference Implementation" in prompt) or "MBPP" in prompt:
+                # 这是MBPP修复prompt，保留完整函数定义
+                print(f"DEBUG: MBPP repair prompt detected, preserving complete function definition")
+                pass
+            else:
+                # 默认当作HumanEval处理，去掉def行
+                lines = completion.split('\n')
+                for i, line in enumerate(lines):
+                    if line.strip().startswith('def '):
+                        # 找到函数签名，返回后面的函数体
+                        if i + 1 < len(lines):
+                            completion = '\n'.join(lines[i+1:]).strip()
+                        break
         
         return completion.strip()
         
@@ -131,7 +156,7 @@ def generate_tests_for_mbpp(description, reference_code, model="gpt-4o-mini", te
         reference_code=reference_code
     )
 
-def generate_implementation_with_tests(description, generated_tests, reference_code, model="gpt-4o-mini", temperature=0.0, max_tokens=600):
+def generate_implementation_with_tests_mbpp(description, generated_tests, reference_code, model="gpt-4o-mini", temperature=0.0, max_tokens=600):
     """阶段2：根据生成的测试生成实现"""
     return generate_one_completion_langchain(
         description, 
@@ -163,7 +188,48 @@ def generate_implementation_with_tests_humaneval(prompt, generated_tests, model=
         temperature=temperature,
         max_tokens=max_tokens,
         generated_tests=generated_tests
-    ) 
+    )
+
+def generate_repaired_code_mbpp(repair_prompt, model="gpt-4o-mini", temperature=0.0, max_tokens=600):
+    """阶段3：根据修复提示生成修复后的代码"""
+    try:
+        llm = OpenAI(
+            model_name=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            request_timeout=60
+        )
+        
+        # 直接调用LLM，不经过复杂的模板处理逻辑
+        response = llm(repair_prompt)
+        completion = response.strip()
+        
+        # 提取代码块（如果有的话）
+        if "```python" in completion:
+            start = completion.find("```python") + 9
+            end = completion.find("```", start)
+            if end != -1:
+                completion = completion[start:end].strip()
+            else:
+                completion = completion[start:].strip()
+        elif "```" in completion:
+            start = completion.find("```") + 3
+            end = completion.find("```", start)
+            if end != -1:
+                completion = completion[start:end].strip()
+            else:
+                completion = completion[start:].strip()
+        
+        # 对于修复代码，保留完整的函数定义（包括def行）
+        print(f"DEBUG: MBPP repair code generation, preserving complete function definition")
+        print(f"DEBUG: Generated code length: {len(completion)}")
+        print(f"DEBUG: First 200 chars: {completion[:200]}")
+        
+        return completion.strip()
+        
+    except Exception as e:
+        print(f"MBPP repair code generation failed: {e}")
+        return "    pass" 
 
 def _fix_syntax_issues(code):
         """修复常见的语法问题 - 递归处理控制流缩进"""

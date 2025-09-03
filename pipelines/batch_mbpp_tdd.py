@@ -14,7 +14,7 @@ sys.path.append('.')
 from pipelines.batch_base import BaseBatchPipeline
 from pipelines.lc_chain.generator import (
     generate_tests_for_mbpp, 
-    generate_implementation_with_tests
+    generate_implementation_with_tests_mbpp
 )
 
 class TDDMBPPBatchPipeline(BaseBatchPipeline):
@@ -100,7 +100,7 @@ class TDDMBPPBatchPipeline(BaseBatchPipeline):
                     
                     # 阶段2：根据测试生成实现
                     print(f"🔄 Stage 2: Generating implementation for task {task_id}")
-                    implementation = generate_implementation_with_tests(
+                    implementation = generate_implementation_with_tests_mbpp(
                         description, generated_tests, reference_code, self.model
                     )
                     print(f"✅ Implementation generated: {len(implementation)} characters")

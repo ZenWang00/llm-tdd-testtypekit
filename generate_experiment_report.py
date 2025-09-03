@@ -138,16 +138,23 @@ def generate_test_quality_table(data_dir: str) -> str:
 
 
 def generate_consistency_table(data_dir: str) -> str:
-    """生成一致性检查表格"""
-    print("Generating consistency table...")
+    """生成一致性检查表格 - 基于现有测试数据"""
+    print("Generating consistency table from existing test data...")
     
-    # 查找所有一致性分析文件
+    # 首先查找现有的分析文件
     pattern = os.path.join(data_dir, "**", "*_analysis.json")
     analysis_files = glob.glob(pattern, recursive=True)
     
-    if not analysis_files:
-        return "No consistency analysis files found."
+    if analysis_files:
+        # 如果有现成的分析文件，使用原有逻辑
+        return generate_consistency_from_analysis_files(analysis_files)
     
+    # 如果没有分析文件，基于现有测试数据生成一致性分析
+    return generate_consistency_from_test_files(data_dir)
+
+
+def generate_consistency_from_analysis_files(analysis_files: List[str]) -> str:
+    """从现有分析文件生成一致性表格"""
     table = []
     table.append("| Dataset | Tasks | Runs | Date | Avg Jaccard | Structure Consistency | Status |")
     table.append("|---------|-------|------|------|--------------|----------------------|--------|")
@@ -201,6 +208,194 @@ def generate_consistency_table(data_dir: str) -> str:
         except Exception as e:
             print(f"Error processing {analysis_file}: {e}")
             continue
+    
+    return "\n".join(table)
+
+
+def generate_consistency_from_test_files(data_dir: str) -> str:
+    """基于现有测试文件生成一致性分析"""
+    print("Analyzing consistency from existing test files...")
+    
+    # 查找所有test_only文件
+    pattern = os.path.join(data_dir, "**", "test_only_*_batch_*_T*.jsonl")
+    test_files = glob.glob(pattern, recursive=True)
+    
+    if not test_files:
+        return "No test files found for consistency analysis."
+    
+    # 按温度分组
+    temp_groups = {}
+    for file_path in test_files:
+        filename = os.path.basename(file_path)
+        if "_T" in filename:
+            # 提取温度值 (T0.1, T0.3, etc.)
+            temp_value = filename.split("_T")[1].split("_")[0]
+            if temp_value not in temp_groups:
+                temp_groups[temp_value] = []
+            temp_groups[temp_value].append(file_path)
+    
+    if len(temp_groups) < 2:
+        return "Insufficient temperature variations for consistency analysis (need at least 2 different temperatures)."
+    
+    # 执行一致性分析
+    try:
+        consistency_results = analyze_consistency_from_files(temp_groups)
+        return format_consistency_results(consistency_results, temp_groups)
+    except Exception as e:
+        return f"Error performing consistency analysis: {str(e)}"
+
+
+def analyze_consistency_from_files(temp_groups: Dict[str, List[str]]) -> Dict[str, Any]:
+    """分析文件间的一致性"""
+    print(f"Analyzing consistency across {len(temp_groups)} temperature groups...")
+    
+    # 加载所有测试数据
+    all_test_data = {}
+    for temp, files in temp_groups.items():
+        all_test_data[temp] = []
+        for file_path in files:
+            samples = load_jsonl_file(file_path)
+            all_test_data[temp].extend(samples)
+    
+    # 按任务ID分组
+    task_groups = {}
+    for temp, samples in all_test_data.items():
+        for sample in samples:
+            task_id = sample.get('task_id', 'unknown')
+            if task_id not in task_groups:
+                task_groups[task_id] = {}
+            task_groups[task_id][temp] = sample.get('generated_tests', '')
+    
+    # 计算一致性指标
+    jaccard_scores = []
+    structure_scores = []
+    valid_tasks = 0
+    
+    for task_id, temp_tests in task_groups.items():
+        if len(temp_tests) >= 2:  # 至少需要2个温度的数据
+            valid_tasks += 1
+            
+            # 计算Jaccard相似度
+            test_sets = [set(test.split()) for test in temp_tests.values() if test.strip()]
+            if len(test_sets) >= 2:
+                jaccard = calculate_jaccard_similarity(test_sets)
+                jaccard_scores.append(jaccard)
+            
+            # 计算结构一致性
+            structure_score = calculate_structure_consistency(list(temp_tests.values()))
+            structure_scores.append(structure_score)
+    
+    # 计算平均值
+    avg_jaccard = sum(jaccard_scores) / len(jaccard_scores) if jaccard_scores else 0.0
+    avg_structure = sum(structure_scores) / len(structure_scores) if structure_scores else 0.0
+    
+    return {
+        'total_tasks': len(task_groups),
+        'valid_tasks': valid_tasks,
+        'avg_jaccard_similarity': avg_jaccard,
+        'avg_structure_consistency': avg_structure,
+        'temperature_groups': list(temp_groups.keys()),
+        'num_temperatures': len(temp_groups)
+    }
+
+
+def calculate_jaccard_similarity(test_sets: List[set]) -> float:
+    """计算多个测试集合的Jaccard相似度"""
+    if len(test_sets) < 2:
+        return 1.0
+    
+    # 计算所有集合对的Jaccard相似度，然后取平均
+    similarities = []
+    for i in range(len(test_sets)):
+        for j in range(i + 1, len(test_sets)):
+            intersection = len(test_sets[i] & test_sets[j])
+            union = len(test_sets[i] | test_sets[j])
+            if union > 0:
+                jaccard = intersection / union
+                similarities.append(jaccard)
+    
+    return sum(similarities) / len(similarities) if similarities else 0.0
+
+
+def calculate_structure_consistency(test_codes: List[str]) -> float:
+    """计算测试代码的结构一致性"""
+    if len(test_codes) < 2:
+        return 1.0
+    
+    # 提取结构特征
+    structures = []
+    for code in test_codes:
+        if code.strip():
+            # 简单的结构特征：函数数量、断言数量、行数
+            func_count = code.count('def test_')
+            assert_count = code.count('assert ')
+            line_count = len([line for line in code.split('\n') if line.strip()])
+            structures.append((func_count, assert_count, line_count))
+    
+    if len(structures) < 2:
+        return 1.0
+    
+    # 计算结构相似度
+    similarities = []
+    for i in range(len(structures)):
+        for j in range(i + 1, len(structures)):
+            s1, s2 = structures[i], structures[j]
+            # 使用余弦相似度
+            dot_product = sum(a * b for a, b in zip(s1, s2))
+            norm1 = sum(a * a for a in s1) ** 0.5
+            norm2 = sum(b * b for b in s2) ** 0.5
+            if norm1 > 0 and norm2 > 0:
+                similarity = dot_product / (norm1 * norm2)
+                similarities.append(similarity)
+    
+    return sum(similarities) / len(similarities) if similarities else 0.0
+
+
+def format_consistency_results(results: Dict[str, Any], temp_groups: Dict[str, List[str]]) -> str:
+    """格式化一致性分析结果"""
+    table = []
+    table.append("| Dataset | Tasks | Runs | Date | Avg Jaccard | Structure Consistency | Status |")
+    table.append("|---------|-------|------|------|--------------|----------------------|--------|")
+    
+    # 从第一个文件提取信息
+    first_file = list(temp_groups.values())[0][0]
+    filename = os.path.basename(first_file)
+    parts = filename.split('_')
+    
+    if 'mbpp' in filename:
+        dataset = "MBPP"
+    elif 'humaneval' in filename:
+        dataset = "HumanEval"
+    else:
+        dataset = "Unknown"
+    
+    # 提取任务数量
+    task_count = "N/A"
+    for part in parts:
+        if part.isdigit() and int(part) < 1000:
+            task_count = part
+            break
+    
+    # 提取日期
+    date_str = "N/A"
+    for part in parts:
+        if len(part) == 8 and part.isdigit():
+            date_str = f"{part[:4]}-{part[4:6]}-{part[6:8]}"
+            break
+    
+    # 格式化结果
+    avg_jaccard = f"{results['avg_jaccard_similarity']:.3f}"
+    structure_consistency = f"{results['avg_structure_consistency']:.3f}"
+    num_runs = results['num_temperatures']
+    
+    # 确定状态
+    status = "✅"
+    if results['avg_jaccard_similarity'] < 0.6:
+        status = "⚠️"
+    if results['avg_jaccard_similarity'] < 0.4:
+        status = "❌"
+    
+    table.append(f"| {dataset} | {task_count} | {num_runs} | {date_str} | {avg_jaccard} | {structure_consistency} | {status} |")
     
     return "\n".join(table)
 
